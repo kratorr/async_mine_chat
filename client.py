@@ -3,6 +3,7 @@ import aiofiles
 import argparse
 import os
 import logging
+import json
 
 from datetime import date, datetime
 
@@ -35,18 +36,30 @@ parser.add_argument('-p',
 
 async def send_data(writer, data):
     logger.debug(data)
-    writer.write(data)
+    data += '\n'
+    writer.write(data.encode('utf-8'))
     
+
 async def chat_client(host, port):
     reader, writer = await asyncio.open_connection(host, port)
         
-    while True:
-        data = await reader.readline()
-        message = data.decode().replace('\n', '')
-        logger.debug(message)
-        await send_data(writer, '4206afde-9c2c-11eb-8c47-0242ac110002\n'.encode('utf-8'))
-        await send_data(writer, 'test message\n\n'.encode('utf-8'))
-        break
+   # while True:
+    data = await reader.readline()
+    message = data.decode().replace('\n', '')
+    logger.debug(message)
+    
+    #await send_data(writer, '4206afde-9c2c-11eb-8c47-0242ac110002\n'.encode('utf-8'))
+    
+    user_token = input('Введите токен: ')
+    await send_data(writer, user_token)
+    
+    message = await reader.readline()
+    
+    response = json.loads(message.decode('utf-8'))
+    if not response:
+        print('Неизвестный токен. Проверьте его или зарегистрируйте заново.')
+    await send_data(writer, 'test message\n')
+
     writer.close()
         
 
