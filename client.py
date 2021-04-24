@@ -7,9 +7,6 @@ import json
 
 from datetime import date, datetime
 
-from asyncio.tasks import sleep
-
-
 logger = logging.getLogger(__file__)
 
 logging.basicConfig(filename='client.log', level=logging.DEBUG)
@@ -34,35 +31,63 @@ parser.add_argument('-p',
                     )
 
 
-async def send_data(writer, data):
+async def submit_message():
+    pass
+
+
+async def authorise(writer, reader, token):
+    message = await reader.readline()
+    await submit_message(writer, token)
+    message = await reader.readline()
+
+    response = json.loads(message.decode('utf-8'))
+    if not response:
+        print('Неизвестный токен. Проверьте его или зарегистрируйте заново.')
+
+
+async def register(host, port, nickname):
+    reader, writer = await asyncio.open_connection(host, port)
+        
+    data = await reader.readline()
+    message = data.decode().replace('\n', '')
+    logger.debug(message)
+    await submit_message(writer, '')
+    data = await reader.readline()
+    message = data.decode().replace('\n', '')
+    logger.debug(message)
+
+    await submit_message(writer, nickname)
+    
+    data = await reader.readline()
+    message = data.decode().replace('\n', '')
+    json_message = json.loads(message)
+    logger.debug(message)
+    with open('token', 'w') as f:
+        json.dump(json_message, f)
+    writer.close()
+    return json_message['account_hash']
+
+
+async def submit_message(writer, data):
     logger.debug(data)
     data += '\n'
     writer.write(data.encode('utf-8'))
     
 
-async def chat_client(host, port):
+async def chat_client(host, port):    
+    user_token = input('Введите токен или нажмите Enter для регистрации: ')
+    if not user_token:
+        nickname = input('Введите ник: ')
+        user_token = await register(host, port, nickname)
+    
     reader, writer = await asyncio.open_connection(host, port)
-        
-   # while True:
-    data = await reader.readline()
-    message = data.decode().replace('\n', '')
-    logger.debug(message)
-    
-    #await send_data(writer, '4206afde-9c2c-11eb-8c47-0242ac110002\n'.encode('utf-8'))
-    
-    user_token = input('Введите токен: ')
-    await send_data(writer, user_token)
-    
-    message = await reader.readline()
-    
-    response = json.loads(message.decode('utf-8'))
-    if not response:
-        print('Неизвестный токен. Проверьте его или зарегистрируйте заново.')
-    await send_data(writer, 'test message\n')
+    await authorise(writer, reader, user_token)
 
-    writer.close()
-        
-
+    while True:
+        message = input('Введите сообщение: ')
+        await submit_message(writer, message + '\n')
+    
+  
 if __name__ == '__main__':
     args = parser.parse_args()
     host, port = args.host, args.port
