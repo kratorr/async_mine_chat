@@ -15,6 +15,9 @@ logging.basicConfig(filename='client.log', level=logging.DEBUG)
 
 parser = argparse.ArgumentParser(description='Async chat client for minechat.')
 
+group = parser.add_mutually_exclusive_group()
+
+
 
 parser.add_argument('-H',
                     '--host',
@@ -30,9 +33,24 @@ parser.add_argument('-p',
                     help='Port; default=5050',
                     )
 
+parser.add_argument('-m',
+                    '--message',
+                    type=str,
+                    help='Message text',
+                    required=True
+                    )
 
-async def submit_message():
-    pass
+group.add_argument('-n',
+                    '--nickname',
+                    type=str,
+                    help='Nickname for register'
+                    )
+
+group.add_argument('-t',
+                    '--token',
+                     type=str,
+                    help='Account hash'
+                    )
 
 
 async def authorise(writer, reader, token):
@@ -74,21 +92,20 @@ async def submit_message(writer, data):
     writer.write(data.encode('utf-8'))
     
 
-async def chat_client(host, port):    
-    user_token = input('Введите токен или нажмите Enter для регистрации: ')
-    if not user_token:
-        nickname = input('Введите ник: ')
-        user_token = await register(host, port, nickname)
-    
+async def chat_client(host, port, message, nickname, token):    
     reader, writer = await asyncio.open_connection(host, port)
-    await authorise(writer, reader, user_token)
+    if nickname:
+        token = await register(host, port, nickname)
 
-    while True:
-        message = input('Введите сообщение: ')
-        await submit_message(writer, message + '\n')
+    if not token:
+        with open('token', 'r') as f:
+            token = json.loads(f.readline())['account_hash']
+        
+    await authorise(writer, reader, token)
+    await submit_message(writer, message + '\n')
     
   
 if __name__ == '__main__':
     args = parser.parse_args()
-    host, port = args.host, args.port
-    asyncio.run(chat_client(host, port))
+    host, port, message, nickname, token = args.host, args.port, args.message, args.nickname, args.token
+    asyncio.run(chat_client(host, port, message, nickname, token))
