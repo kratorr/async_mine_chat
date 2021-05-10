@@ -3,11 +3,11 @@ import aiofiles
 import argparse
 import os
 
-from datetime import date, datetime
+from datetime import  datetime
 
 
 
-parser = argparse.ArgumentParser(description='Async chat client for minechat.')
+parser = argparse.ArgumentParser(description='Async reader chat for minechat.')
 
 
 parser.add_argument('-H',
@@ -42,7 +42,7 @@ async def read_chat(host, port, history_path):
             print(message)
             await file.writelines(f"[{now}] {message}\n")
             await file.flush()
-            
+   
 
 if __name__ == '__main__':
     args = parser.parse_args()
