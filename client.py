@@ -5,18 +5,10 @@ import os
 import logging
 import json
 
-from datetime import date, datetime
-
-logger = logging.getLogger(__file__)
-
-logging.basicConfig(filename='client.log', level=logging.DEBUG)
-
-
 
 parser = argparse.ArgumentParser(description='Async chat client for minechat.')
 
 group = parser.add_mutually_exclusive_group()
-
 
 
 parser.add_argument('-H',
@@ -106,6 +98,8 @@ async def chat_client(host, port, message, nickname, token):
     
   
 if __name__ == '__main__':
+    logger = logging.getLogger(__file__)
+    logging.basicConfig(filename='client.log', level=logging.DEBUG)
     args = parser.parse_args()
     host, port, message, nickname, token = args.host, args.port, args.message, args.nickname, args.token
     asyncio.run(chat_client(host, port, message, nickname, token))
